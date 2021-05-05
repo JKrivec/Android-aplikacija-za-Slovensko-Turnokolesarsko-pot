@@ -18,6 +18,7 @@ import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
@@ -123,14 +124,16 @@ public class DrawingGpxPoints implements  Runnable {
     }
 
     private void addMarkerOnMap(LatLng position, String locationName) {
-        Log.d("gpx", position + " name -> " + locationName);
         map.addMarker(new MarkerOptions()
                 .position(position)
-                .title(locationName));
+                .title("Kontrolna točka")
+                .snippet(locationName));
 
     }
 
     public void drawET() throws XmlPullParserException, IOException {
+        int colorXXX;
+        String currETname = "bullshit";
         // create
         XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
         factory.setNamespaceAware(true);
@@ -138,7 +141,6 @@ public class DrawingGpxPoints implements  Runnable {
         xpp.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES,false);
 
         ArrayList<LatLng> points = new ArrayList<LatLng>();
-        PolylineOptions polyLineOptions =  new PolylineOptions();
 
         // =========== loop over all files needed to be drawn ===========
         for (int i = 0; i < this.fileNamesToDraw.length; i++) {
@@ -157,6 +159,8 @@ public class DrawingGpxPoints implements  Runnable {
                         if (tag.equals("trkpt")) {
                             points.add(new LatLng(Double.parseDouble(xpp.getAttributeValue(null, "lat")), Double.parseDouble(xpp.getAttributeValue(null, "lon"))));
                             //drawLine(new LatLng(Double.parseDouble(xpp.getAttributeValue(null, "lat")), Double.parseDouble(xpp.getAttributeValue(null, "lon"))));
+                        } else if (tag.equals("name")) {
+                            currETname = xpp.getText();
                         }
 
                     } else if(eventType == XmlPullParser.END_TAG) {
@@ -169,14 +173,24 @@ public class DrawingGpxPoints implements  Runnable {
                     eventType = xpp.next();
                 }
 
+                if (i % 2 == 0) {
+                    colorXXX = Color.MAGENTA;
+                } else {
+                    colorXXX = Color.RED;
+                }
+                Log.d("gpx","color: " + colorXXX);
+
+                PolylineOptions polyLineOptions =  new PolylineOptions();
                 polyLineOptions.addAll(points);
-                polyLineOptions.width(6);
-                polyLineOptions.color(Color.RED);
+                polyLineOptions.width(10);
+                polyLineOptions.color(colorXXX);
+                polyLineOptions.isClickable();
                 map.addPolyline(polyLineOptions);
+                // TODO: Add on click listener to polyline
+
 
                 // Add finish marker on single "courses"
-                // TODO: change to len == 1
-                if (this.fileNamesToDraw.length != 1) {
+                if (this.fileNamesToDraw.length == 1) {
                     // Create smaller bitmap than original
                     Bitmap b = BitmapFactory.decodeResource(context.getResources(), R.drawable.finish_flag);
                     Bitmap smallMarker = Bitmap.createScaledBitmap(b, b.getWidth()/2, b.getHeight()/2, false);

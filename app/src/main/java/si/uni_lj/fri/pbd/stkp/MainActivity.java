@@ -37,8 +37,8 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 simulateButtonClick(view);
 
-                //Intent intent = new Intent(view.getContext(), MapsActivity.class);
-                //view.getContext().startActivity(intent);
+                Intent intent = new Intent(view.getContext(), ScrollingActivity.class);
+                view.getContext().startActivity(intent);
 
             }
         });

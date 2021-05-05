@@ -3,4 +3,11 @@
     <color name="colorPrimary">#60000000</color>
     <color name="colorPrimaryDark">#68000000</color>
     <color name="colorAccent">#03DAC5</color>
+    <color name="black">#FF000000</color>
+    <color name="background_gray">#252525</color>
+    <color name="list_element">#2B2B2B</color>
+    <color name="list_element_button">#3A3A3A</color>
+
+    <color name="text_white">#E8E8E8</color>
+    <color name="text_yellow">#FFC107</color>
 </resources>

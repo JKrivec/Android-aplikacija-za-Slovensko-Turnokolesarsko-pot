@@ -83,7 +83,7 @@
 
 
                     <ImageButton
-                        android:id="@+id/list_Expanded_map"
+                        android:id="@+id/etapa_map"
                         android:layout_width="wrap_content"
                         android:layout_height="100dp"
                         android:padding="10dp"
@@ -110,7 +110,7 @@
 
 
                     <ImageButton
-                        android:id="@+id/list_Expanded_website"
+                        android:id="@+id/etapa_website"
                         android:layout_width="match_parent"
                         android:layout_height="100dp"
                         android:layout_marginHorizontal="15dp"

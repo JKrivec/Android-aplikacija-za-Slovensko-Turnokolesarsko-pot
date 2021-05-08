@@ -1,42 +1,24 @@
 package si.uni_lj.fri.pbd.stkp;
 
 import android.content.Context;
-import android.content.res.XmlResourceParser;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.drawable.BitmapDrawable;
-import android.os.Build;
 import android.util.Log;
-import android.widget.Toast;
 
-import androidx.annotation.RequiresApi;
-
-import com.google.android.gms.common.util.IOUtils;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polygon;
-import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.nio.channels.AsynchronousFileChannel;
 import java.util.ArrayList;
 
 public class DrawingGpxPoints implements  Runnable {
@@ -63,9 +45,7 @@ public class DrawingGpxPoints implements  Runnable {
                 break;
             }
         }
-
         if (!contains) {
-            Toast.makeText(this.context, "KT file not in arr", Toast.LENGTH_LONG).show();
             return;
         }
         // ===========/ Check if we should draw KT ===========
@@ -174,11 +154,10 @@ public class DrawingGpxPoints implements  Runnable {
                 }
 
                 if (i % 2 == 0) {
-                    colorXXX = Color.MAGENTA;
-                } else {
                     colorXXX = Color.RED;
+                } else {
+                    colorXXX = Color.MAGENTA;
                 }
-                Log.d("gpx","color: " + colorXXX);
 
                 PolylineOptions polyLineOptions =  new PolylineOptions();
                 polyLineOptions.addAll(points);

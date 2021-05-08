@@ -2,6 +2,7 @@ package si.uni_lj.fri.pbd.stkp;
 
 
 
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
@@ -9,9 +10,10 @@ import androidx.fragment.app.FragmentActivity;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Camera;
+import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -20,8 +22,12 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.AlphaAnimation;
+import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.location.LocationAvailability;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
@@ -37,12 +43,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import org.xmlpull.v1.XmlPullParserException;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, SensorEventListener {
 
     private GoogleMap map;
@@ -50,12 +50,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private SensorManager sensorManager;
     private Sensor accelometer;
     private Sensor magnetometer;
+    private LatLng currLocation;
+    private float currRotation = 0;
     private final int rotationBufferLength = 15;
     private float[] rotationBuffer = new float[rotationBufferLength];
     private int rotationBufferIx = 0;
-    boolean isCameraLocked = false;
     boolean moveToPosition = false;
     private static final int LOCATION_PERMISSION_REQUEST_NUM = 1;
+
+    // Buttons
+    ImageButton findLocationBtn;
+    ImageButton lockMarkerBtn;
+    ImageButton lockPerspectiveBtn;
+
+    volatile boolean animatingCamera = false;
+    boolean isCameraLocked = false;
+    boolean isPerspectiveLocked = false;
+
+    // Warnings
+    TextView noLocationWarning;
+    TextView noGPSWarning;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +80,91 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(si.uni_lj.fri.pbd.stkp.R.id.map);
         mapFragment.getMapAsync(this);
         registerCompassSensors();
+
+        // Set warnings
+        noLocationWarning = findViewById(si.uni_lj.fri.pbd.stkp.R.id.no_location_warning);
+        noGPSWarning = findViewById(si.uni_lj.fri.pbd.stkp.R.id.no_gps_warning);
+
+        // Find location btn
+        findLocationBtn = findViewById(si.uni_lj.fri.pbd.stkp.R.id.find_location_btn);
+        findLocationBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                simulateButtonClick(v);
+                findLocation();
+            }
+        });
+
+        // Lock marker btn
+        lockMarkerBtn = findViewById(si.uni_lj.fri.pbd.stkp.R.id.lock_marker_btn);
+        lockMarkerBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                simulateButtonClick(v);
+                if (!isCameraLocked) {
+                    isCameraLocked = true;
+                    // set hue
+                    v.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#778BC34A")));
+                } else {
+                    isCameraLocked = false;
+                    // unset hue
+                    v.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#17000000")));
+                }
+
+            }
+        });
+
+        // Lock perspective btn
+        lockPerspectiveBtn = findViewById(si.uni_lj.fri.pbd.stkp.R.id.lock_perspective_btn);
+        lockPerspectiveBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                simulateButtonClick(v);
+                if (currLocation == null) {
+                    Toast.makeText(getApplicationContext(),"Lokacija ni znana",Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (!isPerspectiveLocked) {
+                    animatePerspective(currLocation, currRotation, map.getCameraPosition().zoom, 60, 1000);
+
+                    isPerspectiveLocked = true;
+                    // set hue
+                    v.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#778BC34A")));
+                } else {
+                    animatePerspective(currLocation, 0, map.getCameraPosition().zoom, 0, 1000);
+
+                    isPerspectiveLocked = false;
+                    // unset hue
+                    v.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#17000000")));
+
+                }
+
+            }
+        });
+
+
+    }
+
+    private void animatePerspective(LatLng location, float rotation, float zoom, float tilt, int miliseconds) {
+        if (location != null) {
+            CameraPosition currentPlace = new CameraPosition.Builder()
+                    .target(location)
+                    .bearing(rotation)
+                    .tilt(tilt)
+                    .zoom(zoom)
+                    .build();
+            animatingCamera = true;
+            map.animateCamera(CameraUpdateFactory.newCameraPosition(currentPlace), miliseconds, new GoogleMap.CancelableCallback() {
+                @Override
+                public void onFinish() {
+                    animatingCamera = false;
+                }
+                @Override
+                public void onCancel() {
+                    animatingCamera = false;
+                }
+            });
+        }
     }
 
     @Override
@@ -114,24 +213,86 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         map.moveCamera(CameraUpdateFactory.newLatLng(geoCenter));
         map.animateCamera(CameraUpdateFactory.newLatLngZoom(geoCenter, 8));
 
+        // Override default marker behaviour, so google maps suggestions don't show under buttons
+        map.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                map.animateCamera(CameraUpdateFactory.newLatLng(marker.getPosition()), 400, null);
+                marker.showInfoWindow();
+                return true;
+            }
+        });
+
+        // Draw gpx files
         String[] fileNamesToDraw = getIntent().getStringArrayExtra("fileNamesToDraw");
         DrawingGpxPoints gpxDrawer = new DrawingGpxPoints(map, fileNamesToDraw, getApplicationContext());
         gpxDrawer.run();
 
 
-
+        // Start  location tracking
+        //
         // Check if permission is granted
         if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // If not request it
             String[] requestPermissionString = new String[]{Manifest.permission.ACCESS_FINE_LOCATION};
             ActivityCompat.requestPermissions(this, requestPermissionString, LOCATION_PERMISSION_REQUEST_NUM);
         } else {
+            // Start  location tracking
             startLocationTracking();
         }
 
     }
 
+    // ===================== Location tracking =====================
+    private LocationCallback locationCallback = new LocationCallback(){
+        @Override
+        public void onLocationResult(LocationResult locationResult) {
+            super.onLocationResult(locationResult);
 
+            // On the first call, set location to known
+            if (currLocation == null) {
+                noLocationWarning.setVisibility(View.INVISIBLE);
+            }
+            // Read location and save it into class variable
+            double lat = locationResult.getLastLocation().getLatitude();
+            double lng = locationResult.getLastLocation().getLongitude();
+            currLocation = new LatLng(lat, lng);
+
+            // Draw the marker on the map
+            drawMarker();
+            // if camera is locked, then move and zoom the camera
+            if (isCameraLocked) {
+                followCamera(lat, lng);
+            }
+        }
+
+        // Display warning if there is no location service available
+        @Override
+        public void onLocationAvailability(@NonNull LocationAvailability locationAvailability) {
+            super.onLocationAvailability(locationAvailability);
+            if (!locationAvailability.isLocationAvailable()) {
+                noGPSWarning.setVisibility(View.VISIBLE);
+            } else {
+                noGPSWarning.setVisibility(View.INVISIBLE);
+            }
+        }
+    };
+
+    private void startLocationTracking() {
+        LocationRequest locationRequest =  LocationRequest.create();
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        locationRequest.setInterval(100);
+        locationRequest.setFastestInterval(50);
+        LocationServices.getFusedLocationProviderClient(this).requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper());
+    }
+
+    private void stopLocationTracking() {
+        LocationServices.getFusedLocationProviderClient(this).removeLocationUpdates(locationCallback);
+
+    }
+    // =====================/ Location tracking =====================
+
+    /*
     public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantedResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantedResults);
         if (requestCode == LOCATION_PERMISSION_REQUEST_NUM) {
@@ -141,9 +302,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show();
             }
         }
-    }
+    } */
 
-    private void drawMarker(double lat, double lng, float bearing)  {
+    // ===================== GPS arrow =====================
+    private void drawMarker()  {
         // create new marker if null
         if (marker == null) {
             // create smaller size icon from the gps png
@@ -154,30 +316,66 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             BitmapDescriptor scaledGpsArrow = BitmapDescriptorFactory.fromBitmap(smallMarker);
             // add a marker to the map
             marker = map.addMarker(new MarkerOptions()
-                    .position(new LatLng(lat, lng))
+                    .position(currLocation)
                     .flat(true)
                     .icon(scaledGpsArrow));
 
 
         }
         // if already exists, just change its position
-        marker.setPosition(new LatLng(lat, lng));
+        marker.setPosition(currLocation);
         //marker.setRotation(bearing);
     }
 
-    private void moveCamera(double lat, double lng) {
+    private void rotateMarker(float rotation) {
+        if (marker != null) {
+            marker.setRotation(rotation);
+
+            if (isPerspectiveLocked && !animatingCamera) {
+                //animatePerspective(currLocation, currRotation, map.getCameraPosition().zoom, 65, 100);
+
+                CameraPosition currentPlace = new CameraPosition.Builder()
+                        .target(new LatLng(currLocation.latitude, currLocation.longitude))
+                        .bearing(rotation).tilt(60).zoom(map.getCameraPosition().zoom).build();
+                map.moveCamera(CameraUpdateFactory.newCameraPosition(currentPlace));
+
+
+            }
+        }
+
+    }
+    // =====================/ GPS arrow =====================
+
+    // ===================== Buttons =====================
+    private void findLocation() {
+        if (marker != null && currLocation != null) {
+
+            animatingCamera = true;
+            map.animateCamera(CameraUpdateFactory.newLatLngZoom(currLocation,19.5f),new GoogleMap.CancelableCallback() {
+                @Override
+                public void onFinish() {
+                    animatingCamera = false;
+                }
+
+                @Override
+                public void onCancel() {
+                    animatingCamera = false;
+
+                }
+            });
+
+        } else {
+            Toast.makeText(this,"Lokacija ni znana",Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void followCamera(double lat, double lng) {
         if (marker != null) {
             map.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(lat, lng)));
-
         }
     }
+    // =====================/ Buttons =====================
 
-    private void zoomToPosition(LatLng position) {
-        if (marker != null) {
-            map.animateCamera(CameraUpdateFactory.newLatLngZoom(position,19.5f));
-            moveToPosition = false;
-        }
-    }
 
     private void zoomCamera(double lat, double lng) {
         float zoom = map.getCameraPosition().zoom;
@@ -187,13 +385,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private void rotateMarker(float rotation) {
-        if (marker != null) {
-            marker.setRotation(rotation);
-        }
-
-    }
-
     private void rotateMap(float rotation) {
         if(marker != null) {
             CameraPosition rotate = new CameraPosition.Builder().bearing(rotation).build();
@@ -201,37 +392,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-
-    // if camera is locked the camera follows current location
-    public void toggleCameraLock(View v) {
-        Log.d("debug", "toggleCameraLock()");
-        if (isCameraLocked) {
-            isCameraLocked = false  ;
-        } else {
-            isCameraLocked = true;
-        }
-    }
-
-    public void findPosition(View v) {
-        Log.d("debug", "findPosition()");
-        this.moveToPosition = true;
-    }
-
-
-    private void startLocationTracking() {
-
-        LocationRequest locationRequest =  LocationRequest.create();
-        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        locationRequest.setInterval(100);
-        locationRequest.setFastestInterval(50);
-
-        LocationServices.getFusedLocationProviderClient(this).requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper());
-    }
-
-    private void stopLocationTracking() {
-        LocationServices.getFusedLocationProviderClient(this).removeLocationUpdates(locationCallback);
-
-    }
 
     private float[] mGravity = new float[3];
     private float[] mGeomagnetic = new float[3];
@@ -267,37 +427,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             deg = (float) Math.toDegrees(orientation[0]); // orientation
             deg = (deg + 360) % 360;
             rotateMarker(deg);
+            currRotation = deg;
             //rotateMap(deg);
             //Log.d("debug", "(deg): " + deg);
 
         }
     }
 
+    // =================== button click animation ===================
+    private AlphaAnimation fadeIn = new AlphaAnimation(1F, 0.2F);
+    private AlphaAnimation fadeOut = new AlphaAnimation(0.2f, 1F);
 
-
-    private LocationCallback locationCallback = new LocationCallback(){
-        @Override
-        public void onLocationResult(LocationResult locationResult) {
-            super.onLocationResult(locationResult);
-
-            double lat = locationResult.getLastLocation().getLatitude();
-            double lng = locationResult.getLastLocation().getLongitude();
-            float bearing = locationResult.getLastLocation().getBearing();
-
-            Log.d("debug", lat + ", " + lng);
-            drawMarker(lat, lng, bearing);
-            // if camera is locked, then move and zoom the camera
-            if (isCameraLocked) {
-                moveCamera(lat, lng);
-                //zoomCamera(lat, lng);
-            }
-
-            if (moveToPosition) {
-                zoomToPosition(new LatLng(lat, lng));
-            }
-
-        }
-    };
+    private void simulateButtonClick(View view) {
+        fadeIn.setDuration(200);
+        fadeOut.setDuration(200);
+        view.startAnimation(fadeIn);
+        view.startAnimation(fadeOut);
+    }
+    // ===================/ button click animation ===================
 
 
     // =============================== OLD CODE (LOCATION SERVICE) ===============================

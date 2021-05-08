@@ -13,32 +13,80 @@
         android:layout_height="match_parent"
         tools:context=".MapsActivity" />
 
-    <ImageButton
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginEnd="40dp"
-        android:layout_marginBottom="48dp"
-        android:backgroundTint="#00000000"
-        android:onClick="findPosition"
-        android:scaleType="fitCenter"
-        android:src="@drawable/location_lock_icon"
-        android:tint="#000000"
+    <TextView
+        android:id="@+id/no_location_warning"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/map_button_row"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginBottom="10dp"
+        android:background="#7000CCFF"
+        android:gravity="center_horizontal"
+        android:text="Iščem lokacijo"
+        android:textColor="@color/text_white"
+        android:textSize="25dp"
         android:visibility="visible" />
 
-    <ImageButton
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:layout_alignParentEnd="true"
+    <TextView
+        android:id="@+id/no_gps_warning"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/no_location_warning"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginBottom="10dp"
+        android:background="#54FF0000"
+        android:gravity="center_horizontal"
+        android:text="Ni lokacijske storitve"
+        android:textColor="@color/text_white"
+        android:textSize="25dp"
+        android:visibility="invisible" />
+
+    <LinearLayout
+        android:id="@+id/map_button_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_marginEnd="40dp"
-        android:layout_marginBottom="150dp"
-        android:backgroundTint="#00000000"
-        android:onClick="toggleCameraLock"
-        android:scaleType="fitCenter"
-        android:src="@drawable/lock"
-        android:tint="#000000"
-        android:visibility="visible" />
+        android:layout_marginBottom="0dp"
+        android:gravity="bottom"
+        android:orientation="horizontal"
+        android:weightSum="3">
+
+
+        <ImageButton
+            android:id="@+id/find_location_btn"
+            android:layout_width="0dp"
+            android:layout_height="80dp"
+            android:layout_margin="10dp"
+            android:layout_weight="1"
+            android:backgroundTint="#17000000"
+            android:scaleType="fitCenter"
+            android:src="@drawable/location_lock_icon"
+            android:visibility="visible" />
+
+        <ImageButton
+            android:id="@+id/lock_marker_btn"
+            android:layout_width="0dp"
+            android:layout_height="80dp"
+            android:layout_margin="10dp"
+            android:layout_weight="1"
+            android:backgroundTint="#17000000"
+            android:padding="15dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/lock"
+            android:visibility="visible" />
+
+        <ImageButton
+            android:id="@+id/lock_perspective_btn"
+            android:layout_width="0dp"
+            android:layout_height="80dp"
+            android:layout_margin="10dp"
+            android:backgroundTint="#17000000"
+            android:onClick="toggleCameraLock"
+            android:scaleType="fitCenter"
+            android:src="@drawable/perspective_icon"
+            android:visibility="visible"
+            android:layout_weight="1"/>
+    </LinearLayout>
+
 
 </RelativeLayout>

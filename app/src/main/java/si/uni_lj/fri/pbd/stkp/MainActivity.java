@@ -3,13 +3,20 @@ package si.uni_lj.fri.pbd.stkp;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.content.res.AssetManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -52,13 +59,39 @@ public class MainActivity extends AppCompatActivity {
                 simulateButtonClick(view);
 
                 Intent intent = new Intent(view.getContext(), MapsActivity.class);
-                String[] fileNamesToDraw = {"01.gpx", "02.gpx", "03.gpx", "KT.gpx"};
+                String[] fileNamesToDraw = getAllGpxFileNames();
+                if (fileNamesToDraw == null) {
+                    return;
+                }
+                //Log.d("files", "filenamestodraw: " + Arrays.toString(fileNamesToDraw));
                 intent.putExtra("fileNamesToDraw", fileNamesToDraw);
                 view.getContext().startActivity(intent);
 
             }
         });
         // ================/ zemljevid onclick ================
+
+    }
+
+    private String[] getAllGpxFileNames() {
+        ArrayList<String> gpxFilesArrayList = new ArrayList<String>();
+        try {
+            String[] allFiles = this.getAssets().list("");
+            for (int i = 0; i < allFiles.length; i++) {
+                if (allFiles[i].endsWith(".gpx")) {
+                    gpxFilesArrayList.add(allFiles[i]);
+                }
+            }
+            String[] gpxFiles = new String[gpxFilesArrayList.size()];
+            for (int i = 0; i < gpxFilesArrayList.size(); i++) {
+                gpxFiles[i] = gpxFilesArrayList.get(i);
+            }
+            return gpxFiles;
+        } catch (IOException e) {
+            Toast.makeText(getApplicationContext(),"Napaka pri branju direktorija \"assets\"",Toast.LENGTH_LONG).show();
+            e.printStackTrace();
+            return null;
+        }
 
     }
 

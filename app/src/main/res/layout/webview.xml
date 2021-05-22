@@ -7,6 +7,19 @@
     <WebView
         android:id="@+id/webview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"></WebView>
+
+    <ImageButton
+        android:id="@+id/save_webview_btn"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="0dp"
+        android:layout_marginEnd="0dp"
+        android:backgroundTint="#17000000"
+        android:scaleType="fitCenter"
+        android:src="@drawable/save_solid"
+        android:visibility="visible" />
+
 
 </RelativeLayout>

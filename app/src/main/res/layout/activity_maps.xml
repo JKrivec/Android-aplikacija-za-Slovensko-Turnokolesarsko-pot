@@ -58,9 +58,10 @@
             android:layout_height="80dp"
             android:layout_margin="10dp"
             android:layout_weight="1"
+            android:padding="15dp"
             android:backgroundTint="#17000000"
             android:scaleType="fitCenter"
-            android:src="@drawable/location_lock_icon"
+            android:src="@drawable/search_location_solid"
             android:visibility="visible" />
 
         <ImageButton
@@ -72,7 +73,7 @@
             android:backgroundTint="#17000000"
             android:padding="15dp"
             android:scaleType="fitCenter"
-            android:src="@drawable/lock"
+            android:src="@drawable/lock_solid"
             android:visibility="visible" />
 
         <ImageButton

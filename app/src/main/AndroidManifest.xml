@@ -36,7 +36,6 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
-
         <activity
             android:name=".MapsActivity"
             android:label="@string/title_activity_maps">
@@ -44,13 +43,14 @@
         <activity
             android:name=".WebViewActivity"
             android:label="WebActivity">
-
+        </activity>
+        <activity
+            android:name=".SettingsActivity"
+            android:label="Settings">
         </activity>
         <activity
             android:name=".ScrollingActivity"
-            android:label="@string/title_activity_scrolling"
-            android:theme="@style/AppTheme.NoActionBar">
-
+            android:label="Etape">
         </activity>
 
         <service

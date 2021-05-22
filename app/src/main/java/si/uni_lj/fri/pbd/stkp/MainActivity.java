@@ -3,20 +3,14 @@ package si.uni_lj.fri.pbd.stkp;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
-import android.content.res.AssetManager;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
-
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -52,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
         // ================/ seznam etap onclick ================
 
         // ================ zemljevid onclick ================
-        ImageView zemljevid = findViewById(R.id.zemljevidImageView);
+        ImageView zemljevid = findViewById(R.id.mapImageView);
         zemljevid.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -69,7 +63,19 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-        // ================/ zemljevid onclick ================
+        // ================/ zemljevid onclick ================//
+
+        // ================ settings onclick ================
+        ImageView settings = findViewById(R.id.settingsImageView);
+        settings.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                simulateButtonClick(view);
+                Intent intent = new Intent(view.getContext(), SettingsActivity.class);
+                view.getContext().startActivity(intent);
+            }
+        });
+        // ================/ settings onclick ================
 
     }
 

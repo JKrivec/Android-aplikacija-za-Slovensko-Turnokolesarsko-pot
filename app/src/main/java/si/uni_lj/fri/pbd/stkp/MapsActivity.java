@@ -21,7 +21,9 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
+import android.view.Surface;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.animation.AlphaAnimation;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -43,14 +45,18 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.util.Arrays;
+
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, SensorEventListener {
 
     private GoogleMap map;
     private Marker marker;
     private SensorManager sensorManager;
     private Sensor accelometer;
+    private Sensor rotationmeter;
     private Sensor magnetometer;
     private LatLng currLocation;
+    private WindowManager windowManager;
     private float currRotation = 0;
     private final int rotationBufferLength = 15;
     private float[] rotationBuffer = new float[rotationBufferLength];
@@ -74,6 +80,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+
         setContentView(si.uni_lj.fri.pbd.stkp.R.layout.activity_maps);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -184,16 +193,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         sensorManager.unregisterListener(this);
         super.onPause();
     }
-
-    private void registerCompassSensors() {
-        sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
-        accelometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-
-        sensorManager.registerListener(this, accelometer, SensorManager.SENSOR_DELAY_GAME);
-        sensorManager.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_GAME);
-    }
-
 
     /**
      * Manipulates the map once available.
@@ -393,16 +392,32 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
+    // =================== Sensor work ===================
+    private void registerCompassSensors() {
+        sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
+        accelometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        rotationmeter = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+
+        //sensorManager.registerListener(this, accelometer, SensorManager.SENSOR_DELAY_GAME);
+        //sensorManager.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_GAME);
+        sensorManager.registerListener(this, rotationmeter, SensorManager.SENSOR_DELAY_GAME);
+
+    }
+
     private float[] mGravity = new float[3];
     private float[] mGeomagnetic = new float[3];
     private float[] R = new float[9];
     private float[] I = new float[9];
+    private float[] rotationMatrix = new float[9];
+    private float[] rotationVectorValue;
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
+        Toast.makeText(getApplicationContext(),"Sensor acc: " + accuracy,Toast.LENGTH_SHORT).show();
     }
     public void onSensorChanged(SensorEvent event) {
+        /*
         final float alpha = 0.97f;
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
             for (int i = 0; i < 3; i++){
@@ -417,8 +432,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         }
 
-        boolean success = SensorManager.getRotationMatrix(R, I, mGravity,
-                mGeomagnetic);
+        boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
         if (success) {
             float orientation[] = new float[3];
             SensorManager.getOrientation(R, orientation);
@@ -432,7 +446,50 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             //Log.d("debug", "(deg): " + deg);
 
         }
+        */
+        if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
+            rotationVectorValue = event.values;
+            SensorManager.getRotationMatrixFromVector(rotationMatrix, rotationVectorValue);
+            //Log.d("Compass", Arrays.toString(rotationMatrix));
+
+        }
+        final int worldAxisForDeviceAxisX;
+        final int worldAxisForDeviceAxisY;
+
+        // Remap the axes as if the device screen was the instrument panel,
+        // and adjust the rotation matrix for the device orientation.
+        switch (windowManager.getDefaultDisplay().getRotation()) {
+            case Surface.ROTATION_90:
+                worldAxisForDeviceAxisX = SensorManager.AXIS_Z;
+                worldAxisForDeviceAxisY = SensorManager.AXIS_MINUS_X;
+                break;
+            case Surface.ROTATION_180:
+                worldAxisForDeviceAxisX = SensorManager.AXIS_MINUS_X;
+                worldAxisForDeviceAxisY = SensorManager.AXIS_MINUS_Z;
+                break;
+            case Surface.ROTATION_270:
+                worldAxisForDeviceAxisX = SensorManager.AXIS_MINUS_Z;
+                worldAxisForDeviceAxisY = SensorManager.AXIS_X;
+                break;
+            case Surface.ROTATION_0:
+            default:
+                worldAxisForDeviceAxisX = SensorManager.AXIS_X;
+                worldAxisForDeviceAxisY = SensorManager.AXIS_Z;
+                break;
+        }
+
+        float[] adjustedRotationMatrix = new float[9];
+        SensorManager.remapCoordinateSystem(rotationMatrix, worldAxisForDeviceAxisX,
+                worldAxisForDeviceAxisY, adjustedRotationMatrix);
+
+        // Transform rotation matrix into azimuth/pitch/roll
+        float[] orientation = new float[3];
+        SensorManager.getOrientation(adjustedRotationMatrix, orientation);
+
+        // The x-axis is all we care about here.
+        rotateMarker((float) Math.toDegrees(orientation[0]));
     }
+    // =================== Sensor work ===================
 
     // =================== button click animation ===================
     private AlphaAnimation fadeIn = new AlphaAnimation(1F, 0.2F);
@@ -446,42 +503,5 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
     // ===================/ button click animation ===================
 
-
-    // =============================== OLD CODE (LOCATION SERVICE) ===============================
-    /*private boolean isLocationServiceRunning(){
-        ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        if (activityManager != null) {
-            // Loop over all running services, and check if one matches the class name
-            for (ActivityManager.RunningServiceInfo service : activityManager.getRunningServices(Integer.MAX_VALUE)) {
-                if (LocationService.class.getName().equals(service.service.getClassName())) {
-                    if (service.foreground) return true;
-                }
-            }
-            // not found
-            return  false;
-        }
-        return false;
-    }
-
-    private void startLocationService() {
-        if(!isLocationServiceRunning()) {
-            Intent intent = new Intent(getApplicationContext(), LocationService.class);
-            intent.setAction(LocationService.START_LOCATION_SERVICE);
-            startService(intent);
-            Toast.makeText(this, "Location service started", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void stopLocationService() {
-        if (isLocationServiceRunning()) {
-            Intent intent = new Intent(getApplicationContext(), LocationService.class);
-            intent.setAction(LocationService.STOP_LOCATION_SERVICE);
-            startService(intent);
-            Toast.makeText(this, "Location service stopped", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-     */
-    // ===============================/ OLD CODE (LOCATION SERVICE) ===============================
 
 }

@@ -78,7 +78,6 @@ public class EtapaRecyclerViewAdapter extends RecyclerView.Adapter<EtapaRecycler
                     Etapa etapa = etapaList.get(getAbsoluteAdapterPosition());
                     etapa.setExpanded(!etapa.isExpanded());
                     notifyItemChanged(getAbsoluteAdapterPosition());
-                    Log.d("list", "clicked?? bro pls");
                 }
             });
 

@@ -9,13 +9,19 @@
     <string name="seznam_etap">Seznam etap</string>
     <string name="slovenska_turnokolesarska_pot">Slovenska Turnokolesarska Pot</string>
     <string name="zemljevid">Zemljevid</string>
-    <string name="nastavitve">Nastavitve</string>
+    <string name="settings">Nastavitve</string>
     <string name="spletna_stran">Spletna stran</string>
-    <string name="delete_saved_pages">Izbriši vse shranjene strani.</string>
+    <string name="delete_saved_pages">Izbriši vse shranjene strani</string>
     <string name="action_settings">\???</string>
     <string name="no_files">Trenutno ni shranjenih nobenih spletnih strani.</string>
     <string name="saved_page_directory">savedpages</string>
     <string name="files_delete_success">Datotek uspešno izbrisanih:</string>
     <string name="page_save_success">Stran shranjena. Ogled je možen tudi brez povezave.</string>
     <string name="page_delete_success">Stran izbrisana.</string>
+    <string name="api_base_url">http://www.songify.si:5000</string>
+    <string name="api_latest_date_endpoint">/get-latest-date</string>
+    <string name="api_download_zip_endpoint">/download</string>
+    <string name="something_went_wrong">Nekaj je šlo narobe :(</string>
+    <string name="problem_server_connection">Problem pri povezovanju na oddaljen strežnik.</string>
+    <string name="check_for_new_files">Preveri za posodobitve</string>
 </resources>

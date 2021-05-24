@@ -171,7 +171,7 @@
                         android:shadowDx="2"
                         android:shadowDy="2"
                         android:shadowRadius="2"
-                        android:text="@string/nastavitve"
+                        android:text="@string/settings"
                         android:textColor="#FFFFFF"
                         android:textSize="45sp" />
 

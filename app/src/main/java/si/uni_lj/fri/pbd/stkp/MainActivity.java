@@ -4,15 +4,22 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
+
+
+    String downloadsPath;
+    boolean drawInternal;
 
     private AlphaAnimation fadeIn = new AlphaAnimation(1F, 0.2F);
     private AlphaAnimation fadeOut = new AlphaAnimation(0.2f, 1F);
@@ -39,6 +46,8 @@ public class MainActivity extends AppCompatActivity {
                 simulateButtonClick(view);
 
                 Intent intent = new Intent(view.getContext(), ScrollingActivity.class);
+                drawInternal = checkIfFilesPresentInternal();
+                intent.putExtra("drawInternal", drawInternal);
                 view.getContext().startActivity(intent);
 
             }
@@ -57,8 +66,8 @@ public class MainActivity extends AppCompatActivity {
                 if (fileNamesToDraw == null) {
                     return;
                 }
-                //Log.d("files", "filenamestodraw: " + Arrays.toString(fileNamesToDraw));
                 intent.putExtra("fileNamesToDraw", fileNamesToDraw);
+                intent.putExtra("drawInternal", drawInternal);
                 view.getContext().startActivity(intent);
 
             }
@@ -76,13 +85,20 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         // ================/ settings onclick ================
-
+        downloadsPath = getFilesDir().getAbsolutePath() + File.separator + getResources().getString(R.string.download_directory);
     }
 
     private String[] getAllGpxFileNames() {
-        ArrayList<String> gpxFilesArrayList = new ArrayList<String>();
+        ArrayList<String> gpxFilesArrayList = new ArrayList<>();
         try {
-            String[] allFiles = this.getAssets().list("");
+            String[] allFiles;
+            drawInternal = checkIfFilesPresentInternal();
+            if (drawInternal) {
+                allFiles = new File(downloadsPath).list();
+            } else {
+                allFiles = this.getAssets().list("");
+            }
+
             for (int i = 0; i < allFiles.length; i++) {
                 if (allFiles[i].endsWith(".gpx")) {
                     gpxFilesArrayList.add(allFiles[i]);
@@ -99,6 +115,17 @@ public class MainActivity extends AppCompatActivity {
             return null;
         }
 
+    }
+
+    // Check if there are files downloaded from the backend saved in internal storage
+    // Check /downloads
+    private boolean checkIfFilesPresentInternal() {
+        File[] downloads = new File(downloadsPath).listFiles();
+        if (downloads != null && downloads.length > 0) {
+            return true;
+        }
+
+        return false;
     }
 
 

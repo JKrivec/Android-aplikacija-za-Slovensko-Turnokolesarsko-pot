@@ -40,8 +40,6 @@ public class WebViewActivity extends AppCompatActivity {
             public void onClick(View v) {
                 simulateButtonClick(v);
 
-
-
                 String filename = fileNameFromUrl(webView.getUrl());
                 if (checkIfUrlIsFile(webView.getUrl())) {
                     filename = webView.getUrl().split("file://")[1];
@@ -51,9 +49,12 @@ public class WebViewActivity extends AppCompatActivity {
                 File existCheckFile = new File(filename);
                 if (existCheckFile.exists()) {
                     // delete and remove the tint
-                    existCheckFile.delete();
-                    v.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#17000000")));
-                    Toast.makeText(getApplicationContext(), R.string.page_delete_success, Toast.LENGTH_LONG).show();
+                    if(existCheckFile.delete()) {
+                        v.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#17000000")));
+                        Toast.makeText(getApplicationContext(), R.string.page_delete_success, Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(getApplicationContext(), R.string.page_delete_fail, Toast.LENGTH_LONG).show();
+                    }
                 } else {
                     // Create a directory for saved web pages if it does not exist yet
                     new File(filename.substring(0,filename.lastIndexOf("/"))).mkdirs();
@@ -66,9 +67,9 @@ public class WebViewActivity extends AppCompatActivity {
             }
         });
 
-        this.webView = (WebView) findViewById(R.id.webview);
+        this.webView = findViewById(R.id.webview);
         webView.setWebViewClient(new WebViewClient() {
-            // For compatibility reasons, both 2 override both
+            // For compatibility reasons, override both
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 return loadUrl(url);
@@ -87,7 +88,10 @@ public class WebViewActivity extends AppCompatActivity {
         // get url from the intent and try to load it
         String url = getIntent().getStringExtra("url");
         WebSettings webSettings = webView.getSettings();
-        webSettings.setJavaScriptEnabled(true);
+        //webSettings.setJavaScriptEnabled(true);
+        if (url == null) {
+            url = "https://google.com";
+        }
         loadUrl(url);
 
     }
@@ -132,7 +136,7 @@ public class WebViewActivity extends AppCompatActivity {
     }
     
     private String fileNameFromUrl(String url){
-        String base = getFilesDir().getAbsolutePath() + File.separator +getResources().getString(R.string.saved_page_directory) + File.separator;
+        String base = getFilesDir().getAbsolutePath() + File.separator + getResources().getString(R.string.saved_page_directory) + File.separator;
         return base + url.replaceAll("[.,*&\\/:=?]", "_") + ".mhtml";
     }
 

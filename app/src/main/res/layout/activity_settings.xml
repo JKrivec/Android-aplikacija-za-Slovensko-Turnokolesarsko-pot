@@ -21,7 +21,7 @@
         android:gravity="center"
         android:text="@string/settings"
         android:textColor="@color/text_white"
-        android:textSize="50dp" />
+        android:textSize="50sp" />
 
 
     <LinearLayout
@@ -34,14 +34,14 @@
         android:orientation="horizontal">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_margin="20dp"
             android:layout_weight="1"
             android:text="@string/delete_saved_pages"
             android:textColor="@color/text_white"
-            android:textSize="25dp" />
+            android:textSize="25sp" />
 
         <ImageButton
             android:id="@+id/settings_trash_btn"
@@ -57,6 +57,7 @@
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/settings_date_check"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignTop="@+id/settings_trash"
@@ -65,14 +66,15 @@
         android:orientation="horizontal">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:id="@+id/settings_date_check_text"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_margin="20dp"
             android:layout_weight="1"
             android:text="@string/check_for_new_files"
             android:textColor="@color/text_white"
-            android:textSize="25dp" />
+            android:textSize="25sp" />
 
         <ImageButton
             android:id="@+id/settings_date_check_btn"
@@ -86,6 +88,7 @@
             android:src="@drawable/question_solid"
             android:visibility="visible" />
 
+
         <ProgressBar
             android:id="@+id/settings_date_check_loader"
             android:layout_width="50dp"
@@ -95,5 +98,51 @@
             android:indeterminate="true"
             android:visibility="gone"/>
     </LinearLayout>
+
+        <RelativeLayout
+            android:id="@+id/settings_delete_downloads"
+            android:layout_alignTop="@+id/settings_date_check"
+            android:layout_marginTop="100dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/settings_delete_downloads_txt_1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_margin="20dp"
+                android:text="@string/delete_downloads_1"
+                android:textColor="@color/text_white"
+                android:textSize="25sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignTop="@id/settings_delete_downloads_txt_1"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="34dp"
+                android:layout_marginBottom="20dp"
+                android:text="@string/delete_downloads_2"
+                android:textColor="@color/text_white"
+                android:textSize="15sp" />
+
+            <ImageButton
+                android:id="@+id/settings_delete_downloads_btn"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerInParent="true"
+                android:layout_marginEnd="20dp"
+                android:backgroundTint="#5C5C5C"
+                android:padding="10dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/trash_solid"
+                android:visibility="visible" />
+
+        </RelativeLayout>
+
+
 
 </RelativeLayout>

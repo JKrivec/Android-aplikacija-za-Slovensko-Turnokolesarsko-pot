@@ -206,6 +206,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         map = googleMap;
+        //map.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
 
         // display slovenia (geometric centre of slovenia as the middle)
         LatLng geoCenter = new LatLng(46.0, 14.7);
@@ -224,8 +225,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // Draw gpx files
         String[] fileNamesToDraw = getIntent().getStringArrayExtra("fileNamesToDraw");
-        DrawingGpxPoints gpxDrawer = new DrawingGpxPoints(map, fileNamesToDraw, getApplicationContext());
-        gpxDrawer.run();
+        boolean drawInternal = getIntent().getBooleanExtra("drawInternal", false);
+        DrawingGpxPoints gpxDrawer = new DrawingGpxPoints(map, fileNamesToDraw, drawInternal, getApplicationContext());
+        gpxDrawer.draw();
 
 
         // Start  location tracking

@@ -1,9 +1,12 @@
 package si.uni_lj.fri.pbd.stkp;
 
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import com.google.android.gms.maps.GoogleMap;
@@ -17,30 +20,35 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
-public class DrawingGpxPoints implements  Runnable {
-    private final String KTfileName = "KT.gpx";
+public class DrawingGpxPoints {
+    private final String ktFileName = "KT.gpx";
     private Context context;
     private GoogleMap map;
     private String[] fileNamesToDraw;
-    private Boolean DrawKT;
+    private Boolean drawInternal;
+    private String downloadsPath;
 
     // Pass the google map in constructor
-    public DrawingGpxPoints(GoogleMap map, String[] fileNamesToDraw, Context context)  {
+    public DrawingGpxPoints(GoogleMap map, String[] fileNamesToDraw, boolean drawInternal, Context context)  {
         this.map = map;
         this.fileNamesToDraw = fileNamesToDraw;
         this.context = context;
+        this.drawInternal = drawInternal;
+        this.downloadsPath = context.getFilesDir().getAbsolutePath() + File.separator + context.getResources().getString(R.string.download_directory);
     }
 
 
-    public void drawKT() throws IOException, XmlPullParserException {
+    private void drawKT() throws IOException, XmlPullParserException {
         // =========== Check if we should draw KT ===========
         boolean contains = false;
         for (int i = 0; i < this.fileNamesToDraw.length; i++) {
-            if (this.fileNamesToDraw[i].equals(this.KTfileName)) {
+            if (this.fileNamesToDraw[i].equals(ktFileName)) {
                 contains = true;
                 break;
             }
@@ -51,8 +59,12 @@ public class DrawingGpxPoints implements  Runnable {
         // ===========/ Check if we should draw KT ===========
 
         // =========== Opening file, preparing parser ===========
-        // try to open the file
-        InputStream inputStream = context.getAssets().open(this.KTfileName);
+        InputStream inputStream;
+        if (drawInternal) {
+            inputStream = new FileInputStream(downloadsPath + File.separator + ktFileName);
+        } else {
+            inputStream = context.getAssets().open(ktFileName);
+        }
         // TODO: check if inputStream is empty
         // set up parser
         XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
@@ -62,17 +74,13 @@ public class DrawingGpxPoints implements  Runnable {
         xpp.setInput(inputStream,null);
         // ===========/ Opening file, preparing parser ===========
 
-        //
         LatLng position = null;
         String name = null;
         String elevation = null;
         int eventType = xpp.getEventType();
-        //
-        // ===========/ Drawing in a loop ===========
+        // =========== Drawing in a loop ===========
         while (eventType != XmlPullParser.END_DOCUMENT) {
-            if(eventType == XmlPullParser.START_DOCUMENT) {
-                //Log.d("gpx","Start document");
-            } else if(eventType == XmlPullParser.START_TAG ) {
+            if(eventType == XmlPullParser.START_TAG ) {
                 String tag = xpp.getName();
                 if (tag.equals("wpt")) {
                     position = new LatLng(Double.parseDouble(xpp.getAttributeValue(null, "lat")), Double.parseDouble(xpp.getAttributeValue(null, "lon")));
@@ -83,15 +91,8 @@ public class DrawingGpxPoints implements  Runnable {
                     xpp.next();
                     name = xpp.getText();
                 }
-
-            } else if(eventType == XmlPullParser.END_TAG) {
-                //Log.d("gpx","End tag "+xpp.getName());
-            } else if(eventType == XmlPullParser.TEXT) {
-                //Log.d("gpx","Text "+xpp.getText());
             }
-
-            //Log.d("gpx", "position: " + position + ", name: " + name + ", elevation: " + elevation);
-
+            // elevation is currently not used, maybe in the future
             if (position != null && name != null && elevation != null) {
                 addMarkerOnMap(position, name);
                 position = null;
@@ -103,99 +104,120 @@ public class DrawingGpxPoints implements  Runnable {
         // ===========/ Drawing in a loop ===========
     }
 
-    private void addMarkerOnMap(LatLng position, String locationName) {
-        map.addMarker(new MarkerOptions()
-                .position(position)
-                .title("Kontrolna točka")
-                .snippet(locationName));
+    private void addMarkerOnMap(final LatLng position, final String locationName) {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                map.addMarker(new MarkerOptions()
+                        .position(position)
+                        .title(context.getResources().getString(R.string.control_point))
+                        .snippet(locationName));
+            }
+        });
 
     }
 
-    public void drawET() throws XmlPullParserException, IOException {
-        int colorXXX;
-        String currETname = "bullshit";
-        // create
+    private void drawET() throws XmlPullParserException, IOException {
+        int polyLineColor;
+        // create new XmlPullParser
         XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
         factory.setNamespaceAware(true);
         XmlPullParser xpp = factory.newPullParser();
         xpp.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES,false);
 
-        ArrayList<LatLng> points = new ArrayList<LatLng>();
-
+        ArrayList<LatLng> points = new ArrayList<>();
         // =========== loop over all files needed to be drawn ===========
         for (int i = 0; i < this.fileNamesToDraw.length; i++) {
             // Draw only etape
-            if (!this.fileNamesToDraw[i].equals(this.KTfileName)) {
-                // open file
-                InputStream inputStream = context.getAssets().open(this.fileNamesToDraw[i]);
+            if (!this.fileNamesToDraw[i].equals(ktFileName)) {
+                // open the .gpx file
+                InputStream inputStream;
+                if (drawInternal) {
+                    inputStream = new FileInputStream(downloadsPath + File.separator + fileNamesToDraw[i]);
+                } else {
+                    inputStream = context.getAssets().open(fileNamesToDraw[i]);
+                }
+
+                Log.d("drawing", "drawET: " + fileNamesToDraw[i]);
+
                 xpp.setInput(inputStream,null);
 
                 int eventType = xpp.getEventType();
-                while (eventType != XmlPullParser.END_DOCUMENT) {
-                    if(eventType == XmlPullParser.START_DOCUMENT) {
-                        //Log.d("gpx","Start document");
-                    } else if(eventType == XmlPullParser.START_TAG ) {
-                        String tag = xpp.getName();
-                        if (tag.equals("trkpt")) {
-                            points.add(new LatLng(Double.parseDouble(xpp.getAttributeValue(null, "lat")), Double.parseDouble(xpp.getAttributeValue(null, "lon"))));
-                            //drawLine(new LatLng(Double.parseDouble(xpp.getAttributeValue(null, "lat")), Double.parseDouble(xpp.getAttributeValue(null, "lon"))));
-                        } else if (tag.equals("name")) {
-                            currETname = xpp.getText();
+                // Surround with try-catch in case some of the .gpx files are corrupt
+                try {
+                    while (eventType != XmlPullParser.END_DOCUMENT) {
+                        if(eventType == XmlPullParser.START_TAG ) {
+                            String tag = xpp.getName();
+                            if (tag.equals("trkpt")) {
+                                points.add(new LatLng(Double.parseDouble(xpp.getAttributeValue(null, "lat")), Double.parseDouble(xpp.getAttributeValue(null, "lon"))));
+                                //drawLine(new LatLng(Double.parseDouble(xpp.getAttributeValue(null, "lat")), Double.parseDouble(xpp.getAttributeValue(null, "lon"))));
+                            }
                         }
-
-                    } else if(eventType == XmlPullParser.END_TAG) {
-                        //Log.d("gpx","End tag "+xpp.getName());
-                    } else if(eventType == XmlPullParser.TEXT) {
-                        //Log.d("gpx","Text "+xpp.getText());
+                        eventType = xpp.next();
                     }
-
-
-                    eventType = xpp.next();
+                } catch (XmlPullParserException e) {
+                    e.printStackTrace();
                 }
 
+                // Color the trails with different colors to visually separate them
                 if (i % 2 == 0) {
-                    colorXXX = Color.RED;
+                    polyLineColor = Color.RED;
                 } else {
-                    colorXXX = Color.MAGENTA;
+                    polyLineColor = Color.MAGENTA;
                 }
 
-                PolylineOptions polyLineOptions =  new PolylineOptions();
+                // Create polyline options to later draw onto the map
+                final PolylineOptions polyLineOptions =  new PolylineOptions();
                 polyLineOptions.addAll(points);
                 polyLineOptions.width(10);
-                polyLineOptions.color(colorXXX);
-                polyLineOptions.isClickable();
-                map.addPolyline(polyLineOptions);
-                // TODO: Add on click listener to polyline
+                polyLineOptions.color(polyLineColor);
 
-
-                // Add finish marker on single "courses"
+                // Add finish marker on single "courses" (When viewing a single "etapa")
+                final LatLng endPoint = points.get(points.size() - 1);
+                final BitmapDescriptor finishFlag;
                 if (this.fileNamesToDraw.length == 1) {
                     // Create smaller bitmap than original
                     Bitmap b = BitmapFactory.decodeResource(context.getResources(), R.drawable.finish_flag);
                     Bitmap smallMarker = Bitmap.createScaledBitmap(b, b.getWidth()/2, b.getHeight()/2, false);
-                    BitmapDescriptor smallMarkerIcon = BitmapDescriptorFactory.fromBitmap(smallMarker);
-                    // add to the map as marker
-                    map.addMarker(new MarkerOptions()
-                    .position(points.get(points.size() - 1))
-                    .icon(smallMarkerIcon));
+                    finishFlag = BitmapDescriptorFactory.fromBitmap(smallMarker);
+                } else {
+                    finishFlag = null;
                 }
-
+                // Clear the arrayList for each new "etapa"
                 points.clear();
 
+                // Finally draw on the main thread
+                new Handler(Looper.getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        map.addPolyline(polyLineOptions);
+                        // add to the map as marker
+                        if (finishFlag != null) {
+                            map.addMarker(new MarkerOptions()
+                                .position(endPoint)
+                                .icon(finishFlag));
+                        }
+                    }
+                });
+                // TODO: Add on click listener to polyline and show its name
             }
         }
         // ===========/ loop over all files needed to be drawn ===========
     }
 
-
-
-    @Override
-    public void run() {
-        try {
-            this.drawKT();
-            this.drawET();
-        } catch (IOException | XmlPullParserException e) {
-            e.printStackTrace();
-        }
+    // Run on a new, non UI thread
+    public void draw() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    drawKT();
+                    drawET();
+                } catch (IOException | XmlPullParserException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
+
 }

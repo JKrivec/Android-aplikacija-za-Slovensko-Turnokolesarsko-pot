@@ -8,22 +8,16 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
-import android.view.Surface;
 import android.view.View;
-import android.view.WindowManager;
 import android.view.animation.AlphaAnimation;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -45,24 +39,19 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import java.util.Arrays;
+import si.uni_lj.fri.pbd.stkp.orientation.ImprovedOrientationSensor2Provider;
+import si.uni_lj.fri.pbd.stkp.orientation.OrientationProvider;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, SensorEventListener {
+
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap map;
     private Marker marker;
-    private SensorManager sensorManager;
-    private Sensor accelometer;
-    private Sensor rotationmeter;
-    private Sensor magnetometer;
     private LatLng currLocation;
-    private WindowManager windowManager;
+    private float currBearing;
     private float currRotation = 0;
-    private final int rotationBufferLength = 15;
-    private float[] rotationBuffer = new float[rotationBufferLength];
-    private int rotationBufferIx = 0;
-    boolean moveToPosition = false;
     private static final int LOCATION_PERMISSION_REQUEST_NUM = 1;
+    private OrientationProvider currentOrientationProvider;
 
     // Buttons
     ImageButton findLocationBtn;
@@ -77,25 +66,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     TextView noLocationWarning;
     TextView noGPSWarning;
 
+    private boolean yetToAnimatePerspective = false;
+    private int yetToAnimatePerspectiveSkips = 3;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-
-        setContentView(si.uni_lj.fri.pbd.stkp.R.layout.activity_maps);
+        setContentView(R.layout.activity_maps);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(si.uni_lj.fri.pbd.stkp.R.id.map);
+                .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-        registerCompassSensors();
+        //registerCompassSensors();
 
         // Set warnings
-        noLocationWarning = findViewById(si.uni_lj.fri.pbd.stkp.R.id.no_location_warning);
-        noGPSWarning = findViewById(si.uni_lj.fri.pbd.stkp.R.id.no_gps_warning);
+        noLocationWarning = findViewById(R.id.no_location_warning);
+        noGPSWarning = findViewById(R.id.no_gps_warning);
 
         // Find location btn
-        findLocationBtn = findViewById(si.uni_lj.fri.pbd.stkp.R.id.find_location_btn);
+        findLocationBtn = findViewById(R.id.find_location_btn);
         findLocationBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -105,7 +95,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         // Lock marker btn
-        lockMarkerBtn = findViewById(si.uni_lj.fri.pbd.stkp.R.id.lock_marker_btn);
+        lockMarkerBtn = findViewById(R.id.lock_marker_btn);
         lockMarkerBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -134,45 +124,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     return;
                 }
                 if (!isPerspectiveLocked) {
-                    animatePerspective(currLocation, currRotation, map.getCameraPosition().zoom, 60, 1000);
-
-                    isPerspectiveLocked = true;
-                    // set hue
+                    currentOrientationProvider.start();
+                    yetToAnimatePerspective = true;
+                    // set button hue
                     v.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#778BC34A")));
                 } else {
                     animatePerspective(currLocation, 0, map.getCameraPosition().zoom, 0, 1000);
-
+                    currentOrientationProvider.stop();
                     isPerspectiveLocked = false;
-                    // unset hue
+                    setMarkerIcon(0);
+                    marker.setRotation(0);
+                    // unset button hue
                     v.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#17000000")));
-
                 }
-
             }
         });
-
-
-    }
-
-    private void animatePerspective(LatLng location, float rotation, float zoom, float tilt, int miliseconds) {
-        if (location != null) {
-            CameraPosition currentPlace = new CameraPosition.Builder()
-                    .target(location)
-                    .bearing(rotation)
-                    .tilt(tilt)
-                    .zoom(zoom)
-                    .build();
-            animatingCamera = true;
-            map.animateCamera(CameraUpdateFactory.newCameraPosition(currentPlace), miliseconds, new GoogleMap.CancelableCallback() {
-                @Override
-                public void onFinish() {
-                    animatingCamera = false;
-                }
-                @Override
-                public void onCancel() {
-                    animatingCamera = false;
-                }
-            });
+        // Setup precise orientation provider for "perspective mode"
+        //sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
+        currentOrientationProvider = new ImprovedOrientationSensor2Provider((SensorManager) this.getSystemService(SENSOR_SERVICE), this);
+        if (isPerspectiveLocked) {
+            currentOrientationProvider.start();
         }
     }
 
@@ -184,13 +155,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     protected void onResume(){
-        registerCompassSensors();
+        if (isPerspectiveLocked) {
+            currentOrientationProvider.start();
+        }
         super.onResume();
     }
 
     @Override
     protected  void onPause(){
-        sensorManager.unregisterListener(this);
+        currentOrientationProvider.stop();
         super.onPause();
     }
 
@@ -258,7 +231,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             double lat = locationResult.getLastLocation().getLatitude();
             double lng = locationResult.getLastLocation().getLongitude();
             currLocation = new LatLng(lat, lng);
-
             // Draw the marker on the map
             drawMarker();
             // if camera is locked, then move and zoom the camera
@@ -309,38 +281,47 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private void drawMarker()  {
         // create new marker if null
         if (marker == null) {
-            // create smaller size icon from the gps png
-            int height = 75;
-            int width = 75;
-            Bitmap b = BitmapFactory.decodeResource(getResources(), si.uni_lj.fri.pbd.stkp.R.drawable.gps_arrow);
-            Bitmap smallMarker = Bitmap.createScaledBitmap(b, width, height, false);
-            BitmapDescriptor scaledGpsArrow = BitmapDescriptorFactory.fromBitmap(smallMarker);
             // add a marker to the map
             marker = map.addMarker(new MarkerOptions()
                     .position(currLocation)
-                    .flat(true)
-                    .icon(scaledGpsArrow));
-
-
+                    .flat(true));
+            // Set circe for the icon at first
+            setMarkerIcon(0);
         }
         // if already exists, just change its position
         marker.setPosition(currLocation);
-        //marker.setRotation(bearing);
     }
 
-    private void rotateMarker(float rotation) {
+    private void setMarkerIcon(int type) {
+        // create smaller size icon from the gps png
+        int height = 75;
+        int width = 75;
+        Bitmap bitmap;
+        switch (type) {
+            // use 1 when in "perspective" mode
+            case 1:
+                bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.gps_arrow);
+                break;
+
+            default:
+                bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.street_view_solid);
+                break;
+        }
+        Bitmap smallMarker = Bitmap.createScaledBitmap(bitmap, width, height, false);
+        BitmapDescriptor scaledGpsIcon = BitmapDescriptorFactory.fromBitmap(smallMarker);
         if (marker != null) {
-            marker.setRotation(rotation);
+            marker.setIcon(scaledGpsIcon);
+        }
+    }
 
+    private void rotateMarker() {
+        if (marker != null) {
+            marker.setRotation(currRotation);
             if (isPerspectiveLocked && !animatingCamera) {
-                //animatePerspective(currLocation, currRotation, map.getCameraPosition().zoom, 65, 100);
-
                 CameraPosition currentPlace = new CameraPosition.Builder()
                         .target(new LatLng(currLocation.latitude, currLocation.longitude))
-                        .bearing(rotation).tilt(60).zoom(map.getCameraPosition().zoom).build();
+                        .bearing(currRotation).tilt(60).zoom(map.getCameraPosition().zoom).build();
                 map.moveCamera(CameraUpdateFactory.newCameraPosition(currentPlace));
-
-
             }
         }
 
@@ -350,9 +331,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     // ===================== Buttons =====================
     private void findLocation() {
         if (marker != null && currLocation != null) {
-
             animatingCamera = true;
-            map.animateCamera(CameraUpdateFactory.newLatLngZoom(currLocation,19.5f),new GoogleMap.CancelableCallback() {
+            map.animateCamera(CameraUpdateFactory.newLatLngZoom(currLocation,18f),new GoogleMap.CancelableCallback() {
                 @Override
                 public void onFinish() {
                     animatingCamera = false;
@@ -361,7 +341,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 @Override
                 public void onCancel() {
                     animatingCamera = false;
-
                 }
             });
 
@@ -375,123 +354,55 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             map.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(lat, lng)));
         }
     }
+
+    private void animatePerspective(LatLng location, float rotation, float zoom, float tilt, int miliseconds) {
+        Toast.makeText(this, "rotation: " + rotation, Toast.LENGTH_SHORT).show();
+        if (location != null) {
+            CameraPosition currentPlace = new CameraPosition.Builder()
+                    .target(location)
+                    .bearing(rotation)
+                    .tilt(tilt)
+                    .zoom(zoom)
+                    .build();
+            animatingCamera = true;
+            map.animateCamera(CameraUpdateFactory.newCameraPosition(currentPlace), miliseconds, new GoogleMap.CancelableCallback() {
+                @Override
+                public void onFinish() {
+                    animatingCamera = false;
+                }
+                @Override
+                public void onCancel() {
+                    animatingCamera = false;
+                }
+            });
+        }
+    }
     // =====================/ Buttons =====================
 
-
-    private void zoomCamera(double lat, double lng) {
-        float zoom = map.getCameraPosition().zoom;
-        Log.d("debug", "Zoom -> " + zoom);
-        if (zoom < 15) {
-            map.animateCamera(CameraUpdateFactory.zoomTo(19.5f));
-        }
-    }
-
-    private void rotateMap(float rotation) {
-        if(marker != null) {
-            CameraPosition rotate = new CameraPosition.Builder().bearing(rotation).build();
-            map.animateCamera(CameraUpdateFactory.newCameraPosition(rotate));
-        }
-    }
-
-
-    // =================== Sensor work ===================
-    private void registerCompassSensors() {
-        sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
-        accelometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-        rotationmeter = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
-
-        //sensorManager.registerListener(this, accelometer, SensorManager.SENSOR_DELAY_GAME);
-        //sensorManager.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_GAME);
-        sensorManager.registerListener(this, rotationmeter, SensorManager.SENSOR_DELAY_GAME);
-
-    }
-
-    private float[] mGravity = new float[3];
-    private float[] mGeomagnetic = new float[3];
-    private float[] R = new float[9];
-    private float[] I = new float[9];
-    private float[] rotationMatrix = new float[9];
-    private float[] rotationVectorValue;
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        Toast.makeText(getApplicationContext(),"Sensor acc: " + accuracy,Toast.LENGTH_SHORT).show();
-    }
-    public void onSensorChanged(SensorEvent event) {
-        /*
-        final float alpha = 0.97f;
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            for (int i = 0; i < 3; i++){
-                mGravity[i] = alpha * mGravity[i] + (1 - alpha) * event.values[i];
+    /**
+     * Update from the orientation provider
+     */
+    public void update(){
+        float[] angles = new float[3];
+        currentOrientationProvider.getEulerAngles(angles);
+        // TODO: remap axis when angles[0] reaches < -75 (phone held vertically)
+        currRotation = (float) (angles[0] * 180.0f / Math.PI);
+        rotateMarker();
+        
+        // Some spaghetti to make rotation into perspective mode feel right
+        // The first few values from orientation provider after starting it are skewed
+        if (yetToAnimatePerspective) {
+            if (yetToAnimatePerspectiveSkips > 0) {
+                yetToAnimatePerspectiveSkips--;
+                return;
             }
+            yetToAnimatePerspectiveSkips = 3;
+            animatePerspective(currLocation, currRotation, map.getCameraPosition().zoom, 60, 1000);
+            isPerspectiveLocked = true;
+            setMarkerIcon(1);
+            yetToAnimatePerspective = false;
         }
-
-        if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
-            for (int i = 0; i < 3; i++){
-                mGeomagnetic[i] = alpha * mGeomagnetic[i] + (1 - alpha) * event.values[i];
-            }
-
-        }
-
-        boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
-        if (success) {
-            float orientation[] = new float[3];
-            SensorManager.getOrientation(R, orientation);
-            // Log.d(TAG, "azimuth (rad): " + azimuth);
-            float deg;
-            deg = (float) Math.toDegrees(orientation[0]); // orientation
-            deg = (deg + 360) % 360;
-            rotateMarker(deg);
-            currRotation = deg;
-            //rotateMap(deg);
-            //Log.d("debug", "(deg): " + deg);
-
-        }
-        */
-        if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
-            rotationVectorValue = event.values;
-            SensorManager.getRotationMatrixFromVector(rotationMatrix, rotationVectorValue);
-            //Log.d("Compass", Arrays.toString(rotationMatrix));
-
-        }
-        final int worldAxisForDeviceAxisX;
-        final int worldAxisForDeviceAxisY;
-
-        // Remap the axes as if the device screen was the instrument panel,
-        // and adjust the rotation matrix for the device orientation.
-        switch (windowManager.getDefaultDisplay().getRotation()) {
-            case Surface.ROTATION_90:
-                worldAxisForDeviceAxisX = SensorManager.AXIS_Z;
-                worldAxisForDeviceAxisY = SensorManager.AXIS_MINUS_X;
-                break;
-            case Surface.ROTATION_180:
-                worldAxisForDeviceAxisX = SensorManager.AXIS_MINUS_X;
-                worldAxisForDeviceAxisY = SensorManager.AXIS_MINUS_Z;
-                break;
-            case Surface.ROTATION_270:
-                worldAxisForDeviceAxisX = SensorManager.AXIS_MINUS_Z;
-                worldAxisForDeviceAxisY = SensorManager.AXIS_X;
-                break;
-            case Surface.ROTATION_0:
-            default:
-                worldAxisForDeviceAxisX = SensorManager.AXIS_X;
-                worldAxisForDeviceAxisY = SensorManager.AXIS_Z;
-                break;
-        }
-
-        float[] adjustedRotationMatrix = new float[9];
-        SensorManager.remapCoordinateSystem(rotationMatrix, worldAxisForDeviceAxisX,
-                worldAxisForDeviceAxisY, adjustedRotationMatrix);
-
-        // Transform rotation matrix into azimuth/pitch/roll
-        float[] orientation = new float[3];
-        SensorManager.getOrientation(adjustedRotationMatrix, orientation);
-
-        // The x-axis is all we care about here.
-        rotateMarker((float) Math.toDegrees(orientation[0]));
     }
-    // =================== Sensor work ===================
 
     // =================== button click animation ===================
     private AlphaAnimation fadeIn = new AlphaAnimation(1F, 0.2F);

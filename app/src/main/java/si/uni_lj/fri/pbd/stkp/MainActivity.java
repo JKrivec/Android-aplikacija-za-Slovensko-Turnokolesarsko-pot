@@ -21,6 +21,9 @@ public class MainActivity extends AppCompatActivity {
     String downloadsPath;
     boolean drawInternal;
 
+    /**
+     * Define button animations
+     */
     private AlphaAnimation fadeIn = new AlphaAnimation(1F, 0.2F);
     private AlphaAnimation fadeOut = new AlphaAnimation(0.2f, 1F);
 
@@ -37,8 +40,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
-        // ================ seznam etap onclick ================
+        /**
+         * Set up button actions
+         */
+        // ================ etape onclick ================
         ImageView seznamEtap = findViewById(R.id.etapeImageView);
             seznamEtap.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -52,9 +57,8 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-        // ================/ seznam etap onclick ================
 
-        // ================ zemljevid onclick ================
+        // ================ map onclick ================
         ImageView zemljevid = findViewById(R.id.mapImageView);
         zemljevid.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -72,7 +76,6 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-        // ================/ zemljevid onclick ================//
 
         // ================ settings onclick ================
         ImageView settings = findViewById(R.id.settingsImageView);
@@ -84,10 +87,32 @@ public class MainActivity extends AppCompatActivity {
                 view.getContext().startActivity(intent);
             }
         });
-        // ================/ settings onclick ================
+
+        // ================ web page onclick ================
+        ImageView webpage = findViewById(R.id.spletnaStranImageView);
+        webpage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                simulateButtonClick(view);
+                Intent intent = new Intent(view.getContext(), WebViewActivity.class);
+                intent.putExtra("url", getResources().getString(R.string.stkp_url));
+                view.getContext().startActivity(intent);
+            }
+        });
+
+
+
+
+
+
         downloadsPath = getFilesDir().getAbsolutePath() + File.separator + getResources().getString(R.string.download_directory);
     }
 
+    /**
+     *
+     * Return all the names of .gpx files
+     * (internal storage if update was downloaded or assets otherwise)
+     */
     private String[] getAllGpxFileNames() {
         ArrayList<String> gpxFilesArrayList = new ArrayList<>();
         try {
@@ -117,8 +142,10 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    // Check if there are files downloaded from the backend saved in internal storage
-    // Check /downloads
+    /**
+     * Check if there are files downloaded from the backend saved in internal storage
+     * Check /downloads directory
+     */
     private boolean checkIfFilesPresentInternal() {
         File[] downloads = new File(downloadsPath).listFiles();
         if (downloads != null && downloads.length > 0) {
@@ -127,6 +154,4 @@ public class MainActivity extends AppCompatActivity {
 
         return false;
     }
-
-
 }

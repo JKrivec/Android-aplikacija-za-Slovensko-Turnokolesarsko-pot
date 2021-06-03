@@ -33,4 +33,5 @@
     <string name="delete_downloads_2">(V primeru težav po posodobitvi)</string>
     <string name="control_point">Kontrolna točka</string>
     <string name="page_delete_fail">Napaka pri brisanju strani</string>
+    <string name="stkp_url">https://stkp.pzs.si/</string>
 </resources>

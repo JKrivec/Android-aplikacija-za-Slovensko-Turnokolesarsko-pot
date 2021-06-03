@@ -181,8 +181,6 @@ public class SettingsActivity extends AppCompatActivity {
                     }
                     zipInputStream.close();
                     // Create a latest_date.txt in the storage and save the date we updated to.
-                    Log.d("settings", "creating latest_date.txt");
-
                     FileOutputStream fout = new FileOutputStream(downloadsPath + File.separator + "latest_date.txt");
                     fout.write(serverDate.getBytes());
                     fout.close();
@@ -264,14 +262,12 @@ public class SettingsActivity extends AppCompatActivity {
             dateCheckBtn.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#778BC34A")));
             dateCheckText.setText(getResources().getText(R.string.files_up_to_date));
             dateCheckState = 1;
-            Toast.makeText(this, "up to date bro!!", Toast.LENGTH_SHORT).show();
 
         } else {
             dateCheckBtn.setImageResource(R.drawable.cloud_download_alt_solid);
             dateCheckBtn.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#BEC3A54A")));
             dateCheckText.setText(getResources().getText(R.string.files_possible_download));
             dateCheckState = 2;
-            Log.d("settings", "serverDateOnCallback: not up to date lolz");
         }
 
     }

@@ -177,7 +177,7 @@ public class DrawingGpxPoints {
                 final BitmapDescriptor finishFlag;
                 if (this.fileNamesToDraw.length == 1) {
                     // Create smaller bitmap than original
-                    Bitmap b = BitmapFactory.decodeResource(context.getResources(), R.drawable.finish_flag);
+                    Bitmap b = BitmapFactory.decodeResource(context.getResources(), R.drawable.flag_checkered_solid);
                     Bitmap smallMarker = Bitmap.createScaledBitmap(b, b.getWidth()/2, b.getHeight()/2, false);
                     finishFlag = BitmapDescriptorFactory.fromBitmap(smallMarker);
                 } else {

@@ -64,7 +64,7 @@
                 android:background="@color/cardview_dark_background">
                 <ImageView
                     android:id="@+id/etapeImageView"
-                    android:src="@drawable/etape"
+                    android:src="@drawable/etape_image"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:scaleType="centerCrop"
@@ -74,9 +74,8 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_alignStart="@id/etapeImageView"
-                    android:layout_alignTop="@id/etapeImageView"
                     android:layout_alignEnd="@id/etapeImageView"
+                    android:layout_marginEnd="20dp"
                     android:layout_alignBottom="@id/etapeImageView"
                     android:fontFamily="sans-serif-thin"
                     android:gravity="center"
@@ -109,7 +108,7 @@
                     android:background="@color/cardview_dark_background">
                     <ImageView
                         android:id="@+id/mapImageView"
-                        android:src="@drawable/zemlevid"
+                        android:src="@drawable/map_image"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:scaleType="centerCrop"
@@ -120,8 +119,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignStart="@id/mapImageView"
-                        android:layout_alignTop="@id/mapImageView"
-                        android:layout_alignEnd="@id/mapImageView"
+                        android:layout_marginStart="20dp"
                         android:layout_alignBottom="@id/mapImageView"
                         android:fontFamily="sans-serif-thin"
                         android:gravity="center"
@@ -151,7 +149,7 @@
                     android:background="@color/cardview_dark_background">
                     <ImageView
                         android:id="@+id/settingsImageView"
-                        android:src="@drawable/settings"
+                        android:src="@drawable/settings_image"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:scaleType="centerCrop"
@@ -161,9 +159,8 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_alignStart="@id/settingsImageView"
-                        android:layout_alignTop="@id/settingsImageView"
                         android:layout_alignEnd="@id/settingsImageView"
+                        android:layout_marginEnd="20dp"
                         android:layout_alignBottom="@id/settingsImageView"
                         android:fontFamily="sans-serif-thin"
                         android:gravity="center"
@@ -194,7 +191,7 @@
                     android:background="@color/cardview_dark_background">
                     <ImageView
                         android:id="@+id/spletnaStranImageView"
-                        android:src="@drawable/spletna_stran"
+                        android:src="@drawable/stkp_image"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:scaleType="centerCrop"
@@ -203,10 +200,9 @@
 
                     <TextView
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
                         android:layout_alignStart="@id/spletnaStranImageView"
-                        android:layout_alignTop="@id/spletnaStranImageView"
-                        android:layout_alignEnd="@id/spletnaStranImageView"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="20dp"
                         android:layout_alignBottom="@id/spletnaStranImageView"
                         android:fontFamily="sans-serif-thin"
                         android:gravity="center"

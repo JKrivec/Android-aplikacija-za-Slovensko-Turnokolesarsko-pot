@@ -1,16 +1,11 @@
 package si.uni_lj.fri.pbd.stkp;
 
-import android.content.Intent;
 import android.os.Bundle;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.view.View;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -32,7 +27,6 @@ public class ScrollingActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         // get view from layout
         setContentView(R.layout.activity_scrolling);
-
         recyclerView = findViewById(R.id.recyclerView);
         fillEtapeList();
         setRecyclerView();
@@ -65,7 +59,6 @@ public class ScrollingActivity extends AppCompatActivity {
 
         } catch (IOException | JSONException ex) {
             Toast.makeText(this, "Problem while parsing etape json", Toast.LENGTH_LONG).show();
-
             ex.printStackTrace();
         }
     }

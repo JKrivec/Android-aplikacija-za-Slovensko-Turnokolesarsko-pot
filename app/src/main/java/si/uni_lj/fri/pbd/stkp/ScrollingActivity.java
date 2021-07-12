@@ -58,7 +58,7 @@ public class ScrollingActivity extends AppCompatActivity {
             }
 
         } catch (IOException | JSONException ex) {
-            Toast.makeText(this, "Problem while parsing etape json", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Problem pri branju podatkov etap iz .json datoteke.", Toast.LENGTH_LONG).show();
             ex.printStackTrace();
         }
     }

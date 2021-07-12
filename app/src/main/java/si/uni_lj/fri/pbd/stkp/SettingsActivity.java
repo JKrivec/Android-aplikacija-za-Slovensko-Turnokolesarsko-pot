@@ -116,9 +116,6 @@ public class SettingsActivity extends AppCompatActivity {
     // Check /downloads
     private boolean checkIfFilesPresentInternal() {
         File[] downloads = new File(downloadsPath).listFiles();
-        for (int i = 0; i < downloads.length; i++) {
-            Log.d("settings", downloads[i].getName());
-        }
         return downloads != null && downloads.length > 0;
     }
 

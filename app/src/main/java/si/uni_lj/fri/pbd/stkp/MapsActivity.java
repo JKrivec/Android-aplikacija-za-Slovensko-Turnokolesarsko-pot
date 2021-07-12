@@ -67,7 +67,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     TextView noGPSWarning;
 
     private boolean yetToAnimatePerspective = false;
-    private int yetToAnimatePerspectiveSkips = 3;
+    private int yetToAnimatePerspectiveSkips = 5;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -388,7 +388,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // TODO: remap axis when angles[0] reaches < -75 (phone held vertically)
         currRotation = (float) (angles[0] * 180.0f / Math.PI);
         rotateMarker();
-        
+
         // Some spaghetti to make rotation into perspective mode feel right
         // The first few values from orientation provider after starting it are skewed
         if (yetToAnimatePerspective) {
@@ -396,7 +396,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 yetToAnimatePerspectiveSkips--;
                 return;
             }
-            yetToAnimatePerspectiveSkips = 3;
+            yetToAnimatePerspectiveSkips = 5;
             animatePerspective(currLocation, currRotation, map.getCameraPosition().zoom, 60, 1000);
             isPerspectiveLocked = true;
             setMarkerIcon(1);

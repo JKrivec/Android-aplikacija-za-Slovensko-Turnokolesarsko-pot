@@ -1,5 +1,6 @@
 package si.uni_lj.fri.pbd.stkp;
 
+import android.content.Context;
 import android.os.Bundle;
 
 
@@ -12,6 +13,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -19,6 +22,8 @@ import java.util.List;
 
 public class ScrollingActivity extends AppCompatActivity {
 
+    boolean drawInternal;
+    String downloadsPath;
     RecyclerView recyclerView;
     List<Etapa> etapeList;
 
@@ -28,6 +33,11 @@ public class ScrollingActivity extends AppCompatActivity {
         // get view from layout
         setContentView(R.layout.activity_scrolling);
         recyclerView = findViewById(R.id.recyclerView);
+        drawInternal = getIntent().getBooleanExtra("drawInternal", false);
+        if (drawInternal) {
+            Context appContext = getApplicationContext();
+            downloadsPath = appContext.getFilesDir().getAbsolutePath() + File.separator + appContext.getResources().getString(R.string.download_directory);
+        }
         fillEtapeList();
         setRecyclerView();
 
@@ -43,7 +53,12 @@ public class ScrollingActivity extends AppCompatActivity {
         String json = null;
         this.etapeList = new ArrayList<Etapa>();
         try {
-            InputStream inputStream = getAssets().open("etape.json");
+            InputStream inputStream;
+            if (drawInternal) {
+                inputStream = new FileInputStream(downloadsPath + File.separator + "etape.json");
+            } else {
+                inputStream = getAssets().open("etape.json");
+            }
             int size = inputStream.available();
             byte[] buffer = new byte[size];
             inputStream.read(buffer);

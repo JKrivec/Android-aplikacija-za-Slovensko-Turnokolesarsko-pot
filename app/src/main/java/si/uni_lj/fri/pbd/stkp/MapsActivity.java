@@ -48,7 +48,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap map;
     private Marker marker;
     private LatLng currLocation;
-    private float currBearing;
     private float currRotation = 0;
     private static final int LOCATION_PERMISSION_REQUEST_NUM = 1;
     private OrientationProvider currentOrientationProvider;
@@ -179,7 +178,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         map = googleMap;
-        //map.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
 
         // display slovenia (geometric centre of slovenia as the middle)
         LatLng geoCenter = new LatLng(46.0, 14.7);
@@ -216,6 +214,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
     }
+
+    // Listen for granted location tracking permission
+    // so we can start tracking as soon as we get the permission
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case LOCATION_PERMISSION_REQUEST_NUM: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    startLocationTracking();
+                } else {
+                    Toast.makeText(this,"Funkcionalnosti, ki uporabljajo lokacijo ne bodo delovale.",Toast.LENGTH_LONG).show();
+                }
+                return;
+            }
+        }
+    }
+
 
     // ===================== Location tracking =====================
     private LocationCallback locationCallback = new LocationCallback(){
@@ -356,7 +372,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void animatePerspective(LatLng location, float rotation, float zoom, float tilt, int miliseconds) {
-        Toast.makeText(this, "rotation: " + rotation, Toast.LENGTH_SHORT).show();
         if (location != null) {
             CameraPosition currentPlace = new CameraPosition.Builder()
                     .target(location)

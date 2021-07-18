@@ -150,8 +150,6 @@ public class SettingsActivity extends AppCompatActivity {
                 sink.close();
 
 
-                // TODO: check if you got the file, then delete the old ones
-
                 Log.d("download", "unzipping");
 
                 // Unzipping

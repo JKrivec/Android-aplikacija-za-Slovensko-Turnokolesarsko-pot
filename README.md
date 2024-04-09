@@ -1,3 +1,4 @@
+# Diplomsko delo UL FRI
 #Android aplikacija za Slovensko Turnokolesarsko pot
 [Uradna stran Slovensko Turnokolesarske poti](https://stkp.pzs.si/)
 
